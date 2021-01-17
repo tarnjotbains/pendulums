@@ -2,10 +2,15 @@ import PyQt5.QtWidgets as qtw
 from PyQt5 import QtCore
 from pyqtgraph import PlotWidget, plot 
 import pyqtgraph as pg
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 import sys 
 import os 
+import pyqtgraph.opengl as gl
 
 from pendulum import Pendulum 
+import numpy as np 
+import math
 
 
 class MainWindow(qtw.QWidget): 
@@ -14,13 +19,9 @@ class MainWindow(qtw.QWidget):
         self.setWindowTitle('Pendulums')
         self.setLayout(qtw.QVBoxLayout()) 
         self.plot_pendulums()
+        self.plot_points() 
 
-        self.timer= QtCore.QTimer()
-        self.timer.setInterval(1) 
-        self.timer.timeout.connect(self.update_plot) 
-        self.timer.start()
 
-        self.show() 
     
     def create_pendulum(self): 
         self.pendulum = Pendulum()
@@ -47,7 +48,33 @@ class MainWindow(qtw.QWidget):
         self.plot = self.container.plot(hour,temperature, symbol='o', symbolSize=5) 
 
         self.layout().addWidget(self.container)
+
+
+
+        # creating sliders
+        self.mySlider = QSlider(Qt.Horizontal, self)
+        self.mySlider.setTickInterval(math.radians(0.001)) 
+        self.mySlider.valueChanged[int].connect(self.value_change)
+
+
+        
+        self.timer= QtCore.QTimer()
+        self.timer.setInterval(1) 
+        self.timer.timeout.connect(self.update_plot) 
+        self.timer.start()
+
+        self.show() 
+
     
+    def plot_points(self): 
+        container = pg.PlotWidget() 
+        container.showGrid(x=True, y=True) 
+        self.points = container.plot(self.list_x, self.list_y) 
+        self.layout().addWidget(container) 
+
+    def value_change(self, value):
+        self.pendulum.angle1 += value
+
     def update_plot(self):
         self.pendulum.update()
 
@@ -57,8 +84,12 @@ class MainWindow(qtw.QWidget):
         self.list_x += [hour[2]]
         self.list_y += [temperature[2]]
 
+
         self.plot.setData(hour, temperature) 
-        self.second_plot.setData(self.list_x, self.list_y) 
+        self.second_plot.setData(self.list_x, self.list_y)
+        self.points.setData(self.list_x, self.list_y) 
+
+
 
 
     
